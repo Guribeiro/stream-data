@@ -3,6 +3,8 @@ import React, { useEffect, createContext, useContext, useState, ReactNode } from
 import { generateRandom } from 'expo-auth-session/build/PKCE';
 
 import { api } from '../services/api';
+import { processFontFamily } from 'expo-font';
+import { Alert } from 'react-native';
 
 interface User {
   id: number;
@@ -38,59 +40,90 @@ function AuthProvider({ children }: AuthProviderData) {
 
   // get CLIENT_ID from environment variables
 
+  const {CLIENT_ID} = process.env;
+
+  type Params = {
+    access_token: string;
+    scope: string;
+    state: string;
+    token_type: string;
+  }
+
   async function signIn() {
     try {
-      // set isLoggingIn to true
 
-      // REDIRECT_URI - create OAuth redirect URI using makeRedirectUri() with "useProxy" option set to true
-      // RESPONSE_TYPE - set to "token"
-      // SCOPE - create a space-separated list of the following scopes: "openid", "user:read:email" and "user:read:follows"
-      // FORCE_VERIFY - set to true
-      // STATE - generate random 30-length string using generateRandom() with "size" set to 30
 
-      // assemble authUrl with twitchEndpoint authorization, client_id, 
-      // redirect_uri, response_type, scope, force_verify and state
+      setIsLoggingIn(true);
 
-      // call startAsync with authUrl
+      const REDIRECT_URI = makeRedirectUri({useProxy: true});
 
-      // verify if startAsync response.type equals "success" and response.params.error differs from "access_denied"
-      // if true, do the following:
+      const RESPONSE_TYPE = 'token';
 
-        // verify if startAsync response.params.state differs from STATE
-        // if true, do the following:
-          // throw an error with message "Invalid state value"
+      const SCOPE = encodeURI('openid user:read:email user:read:follows')
 
-        // add access_token to request's authorization header
+      const FORCE_VERIFY = true;
 
-        // call Twitch API's users route
+      const STATE = generateRandom(30);
 
-        // set user state with response from Twitch API's route "/users"
-        // set userToken state with response's access_token from startAsync
+      const authUrl = twitchEndpoints.authorization + 
+      `?client_id=${CLIENT_ID}` + 
+      `&redirect_uri=${REDIRECT_URI}` + 
+      `&response_type=${RESPONSE_TYPE}` + 
+      `&scope=${SCOPE}` + 
+      `&force_verify=${FORCE_VERIFY}` +
+      `&state=${STATE}`;
+
+      const response = await startAsync({authUrl})
+
+      if(response.type !== 'success') throw new Error('access danied');
+      
+      const {state, access_token, token_type} = response.params as Params;
+
+      console.log(response.params)
+
+      if(state !== STATE) throw new Error('Invalid state value')
+
+      api.defaults.headers.common['authorization'] = `Bearer ${access_token}`;
+
+      const userResponse = await api.get('/users');
+
+      const [userData] = userResponse.data.data;
+
+      setUser(userData);
+      setUserToken(access_token)
+
+
     } catch (error) {
-      // throw an error
+      throw new Error();
+
     } finally {
-      // set isLoggingIn to false
+      setIsLoggingIn(false)
     }
   }
 
   async function signOut() {
     try {
-      // set isLoggingOut to true
+      setIsLoggingOut(true);
+      await revokeAsync({
+        token: userToken,
+        clientId: CLIENT_ID,
 
-      // call revokeAsync with access_token, client_id and twitchEndpoint revocation
+      }, {
+        revocationEndpoint: twitchEndpoints.revocation
+      })
     } catch (error) {
+      throw new Error()
     } finally {
-      // set user state to an empty User object
-      // set userToken state to an empty string
-
-      // remove "access_token" from request's authorization header
-
-      // set isLoggingOut to false
+      setUser({} as User);
+      setUserToken('');
+      delete api.defaults.headers.common['authorization'];
+      setIsLoggingOut(false);
+     
     }
   }
 
   useEffect(() => {
-    // add client_id to request's "Client-Id" header
+    api.defaults.headers.common['Client-Id'] = CLIENT_ID as string;
   }, [])
 
   return (

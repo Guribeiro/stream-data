@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useTheme } from 'styled-components';
 import { Fontisto } from '@expo/vector-icons'
 import { ActivityIndicator, Alert, Modal, View } from 'react-native';
@@ -25,13 +25,14 @@ export function SignIn() {
   const { signIn, isLoggingIn } = useAuth();
   const theme = useTheme();
 
-  // creates a function to handle sign in
-    // try to call and wait signIn
-    // if fails, display an Alert with the title "Erro SignIn" and message "Ocorreu um erro ao tentar logar no app"
-
-    // const signInButtonProps = {
-    //   onPress: your-signIn-function
-    // }
+  const handleSignin = useCallback(async () => {
+    try {
+      await signIn()
+    } catch (error) {
+      Alert.alert('Ocorreu um erro ao tentar logar no app')
+    }
+  },[])
+ 
 
   return (
     <Container
@@ -65,19 +66,19 @@ export function SignIn() {
             o mundo da Twitch
           </Description>
 
-          {/* <SignInButton {...signInButtonProps}>
+          <SignInButton onPress={handleSignin}>
             <SignInButtonIcon>
-              Verify if isLoggingIn is true
-              If it is, show an ActivityIndicator
-              Otherwise, show Fontisto's twitch icon
+              {isLoggingIn ? (
+                <ActivityIndicator size='small' color={theme.colors.purple} />
+              ): (
+                  <Fontisto name='twitch' color={theme.colors.white} />
+              )}
             </SignInButtonIcon>
 
             <SignInButtonText>
-              Verify if isLoggingIn is true
-              If it is, show "Entrando..."
-              Otherwise, show "Entrar com Twitch"
+                {isLoggingIn ? 'Entrando...' : 'Entrar com twitch'}
             </SignInButtonText>
-          </SignInButton> */}
+          </SignInButton>
         </LoginInfo>
       </Content>
 

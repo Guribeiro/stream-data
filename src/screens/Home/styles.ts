@@ -1,4 +1,5 @@
 import { MotiView } from 'moti';
+import {TouchableOpacity} from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import { getStatusBarHeight } from 'react-native-iphone-x-helper';
 import styled from 'styled-components/native';
@@ -37,7 +38,7 @@ export const UserInfoText = styled.Text`
   font-family: ${props => props.theme.fonts.regular};
 `;
 
-export const SignOutButton = styled(RectButton)`
+export const SignOutButton = styled(TouchableOpacity)`
   justify-content: center;
 
   align-items: center;

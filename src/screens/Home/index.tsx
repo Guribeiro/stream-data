@@ -1,5 +1,5 @@
 import { useTheme } from 'styled-components';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Modal, ActivityIndicator, View } from 'react-native';
 import { Feather } from '@expo/vector-icons'
 
@@ -54,6 +54,14 @@ export function Home() {
     // try to call and wait signOut
     // if fails, display an Alert with the title "Erro SignOut" and message "Ocorreu um erro ao tentar se deslogar do app"
 
+  const handleSignout = useCallback(async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      Alert.alert('Algo deu errado, tente novamente')
+    }
+  },[])
+
   async function getTopGames() {
     try {
       const response = await api.get('/games/top');
@@ -98,9 +106,7 @@ export function Home() {
     getUserFollowedStreams();
   }, [])
 
-  // const signOutButtonProps = {
-  //   onPress: your-signOut-function
-  // }
+ 
 
   return (
     <Container
@@ -125,11 +131,13 @@ export function Home() {
           <UserInfoText style={{ fontFamily: theme.fonts.bold }}>{user.display_name}</UserInfoText>
         </UserInfo>
 
-        {/* <SignOutButton onPress={}>
-          Verify if isLoggingOut is true
-          If it is, show an ActivityIndicator
-          Otherwise, show Feather's power icon
-        </SignOutButton> */}
+        <SignOutButton onPress={handleSignout}>
+          {isLoggingOut ? (
+            <ActivityIndicator color={theme.colors.white} />
+          ): (
+            <Feather name='power' color={theme.colors.white} size={24}/>
+          )}
+        </SignOutButton>
       </Header>
 
       <UserFollowedStreams>
